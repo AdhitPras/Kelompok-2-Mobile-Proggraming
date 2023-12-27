@@ -1,4 +1,11 @@
 # Kelompok-2-Mobile-Proggraming
+
+Anggota kelompok 2
+2113025016	Adhitya Putra P
+2113025014	Abeliya
+2113025023	Muhamad Amirudin
+2113025025	Adinda putri
+
 Pembuatan Aplikasi Mobile/Android
 
 Pendahuluan : 
