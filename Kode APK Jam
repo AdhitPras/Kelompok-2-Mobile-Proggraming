@@ -1,0 +1,432 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: AlarmApp(),
+    );
+  }
+}
+
+class AlarmApp extends StatefulWidget {
+  @override
+  _AlarmAppState createState() => _AlarmAppState();
+}
+
+class _AlarmAppState extends State<AlarmApp> {
+  int _currentIndex = 0;
+  TimeOfDay _selectedTime = TimeOfDay.now();
+  String _selectedRingtone = 'Default Ringtone';
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        title: Text('Alarm Kelompok 2'),
+        backgroundColor: Colors.black,
+      ),
+      body: _getBody(),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        items: [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.access_alarm),
+            label: 'Alarm',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.timer),
+            label: 'Stopwatch',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.hourglass_empty),
+            label: 'Timer',
+          ),
+        ],
+        backgroundColor: Colors.black,
+        selectedItemColor: Colors.white,
+        unselectedItemColor: Colors.grey,
+      ),
+    );
+  }
+
+  Widget _getBody() {
+    switch (_currentIndex) {
+      case 0:
+        return AlarmPage(
+          selectedTime: _selectedTime,
+          onTimeSelected: _onTimeSelected,
+          selectedRingtone: _selectedRingtone,
+          onRingtoneSelected: _onRingtoneSelected,
+        );
+      case 1:
+        return StopwatchPage();
+      case 2:
+        return TimerPage();
+      default:
+        return Container();
+    }
+  }
+
+  void _onTimeSelected(TimeOfDay newTime) {
+    setState(() {
+      if (newTime != null) {
+        _selectedTime = newTime;
+      }
+    });
+  }
+
+  void _onRingtoneSelected(String newRingtone) {
+    setState(() {
+      _selectedRingtone = newRingtone;
+    });
+  }
+}
+
+class AlarmPage extends StatelessWidget {
+  final TimeOfDay selectedTime;
+  final Function(TimeOfDay) onTimeSelected;
+  final String selectedRingtone;
+  final Function(String) onRingtoneSelected;
+
+  const AlarmPage({
+    required this.selectedTime,
+    required this.onTimeSelected,
+    required this.selectedRingtone,
+    required this.onRingtoneSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.black,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            'Setting Alarm',
+            style: TextStyle(color: Colors.white, fontSize: 24),
+          ),
+          SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Masukan Waktu: ${selectedTime.format(context)}',
+                style: TextStyle(color: Colors.white),
+              ),
+              IconButton(
+                icon: Icon(Icons.access_time, color: Colors.white),
+                onPressed: () async {
+                  TimeOfDay? newTime = await showTimePicker(
+                    context: context,
+                    initialTime: selectedTime,
+                  );
+                  onTimeSelected(newTime ?? selectedTime);
+                },
+              ),
+            ],
+          ),
+          SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Pilih Nada dering: $selectedRingtone',
+                style: TextStyle(color: Colors.white),
+              ),
+              IconButton(
+                icon: Icon(Icons.music_note, color: Colors.white),
+                onPressed: () {
+                  // You can implement a ringtone picker here
+                  // For simplicity, let's assume you have a list of ringtones
+                  List<String> ringtones = ['Ringtone 1', 'Ringtone 2', 'Ringtone 3'];
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text('Select Ringtone'),
+                        content: Column(
+                          children: ringtones
+                              .map(
+                                (ringtone) => ListTile(
+                              title: Text(ringtone),
+                              onTap: () {
+                                onRingtoneSelected(ringtone);
+                                Navigator.pop(context);
+                              },
+                            ),
+                          )
+                              .toList(),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class StopwatchPage extends StatefulWidget {
+  @override
+  _StopwatchPageState createState() => _StopwatchPageState();
+}
+
+class _StopwatchPageState extends State<StopwatchPage> {
+  Stopwatch _stopwatch = Stopwatch();
+  Timer? _timer;
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.black,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            'Stopwatch',
+            style: TextStyle(color: Colors.white, fontSize: 24),
+          ),
+          SizedBox(height: 20),
+          Text(
+            _formattedTime(_stopwatch.elapsedMilliseconds),
+            style: TextStyle(color: Colors.white, fontSize: 48),
+          ),
+          SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton(
+                onPressed: () {
+                  if (!_stopwatch.isRunning) {
+                    _startStopwatch();
+                  } else {
+                    _pauseStopwatch();
+                  }
+                },
+                child: Text(_stopwatch.isRunning ? 'Pause' : 'Start'),
+              ),
+              SizedBox(width: 20),
+              ElevatedButton(
+                onPressed: _resetStopwatch,
+                child: Text('Reset'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _startStopwatch() {
+    _stopwatch.start();
+    _timer = Timer.periodic(Duration(milliseconds: 100), (timer) {
+      setState(() {});
+    });
+  }
+
+  void _pauseStopwatch() {
+    _stopwatch.stop();
+    _timer?.cancel();
+    setState(() {});
+  }
+
+  void _resetStopwatch() {
+    _stopwatch.reset();
+    setState(() {});
+  }
+
+  String _formattedTime(int milliseconds) {
+    int hundreds = (milliseconds / 10).truncate();
+    int seconds = (hundreds / 100).truncate();
+    int minutes = (seconds / 60).truncate();
+
+    String minutesStr = (minutes % 60).toString().padLeft(2, '0');
+    String secondsStr = (seconds % 60).toString().padLeft(2, '0');
+    String hundredsStr = (hundreds % 100).toString().padLeft(2, '0');
+
+    return '$minutesStr:$secondsStr.$hundredsStr';
+  }
+}
+
+class TimerPage extends StatefulWidget {
+  @override
+  _TimerPageState createState() => _TimerPageState();
+}
+
+class _TimerPageState extends State<TimerPage> {
+  late Duration _duration;
+  late Timer _timer;
+  bool _isRunning = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _duration = Duration(minutes: 1);
+    _timer = Timer(Duration(seconds: 1), () {});
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.black,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            'Timer',
+            style: TextStyle(color: Colors.white, fontSize: 24),
+          ),
+          SizedBox(height: 20),
+          Text(
+            _formattedTime(_duration.inMilliseconds),
+            style: TextStyle(color: Colors.white, fontSize: 48),
+          ),
+          SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton(
+                onPressed: () {
+                  if (!_isRunning) {
+                    _startTimer();
+                  } else {
+                    _pauseTimer();
+                  }
+                },
+                child: Text(_isRunning ? 'Pause' : 'Start'),
+              ),
+              SizedBox(width: 20),
+              ElevatedButton(
+                onPressed: _resetTimer,
+                child: Text('Reset'),
+              ),
+            ],
+          ),
+          SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Set Duration: ',
+                style: TextStyle(color: Colors.white),
+              ),
+              IconButton(
+                icon: Icon(Icons.arrow_upward, color: Colors.white),
+                onPressed: () {
+                  _incrementDuration();
+                },
+              ),
+              Text(
+                '${_duration.inMinutes} min',
+                style: TextStyle(color: Colors.white),
+              ),
+              IconButton(
+                icon: Icon(Icons.arrow_downward, color: Colors.white),
+                onPressed: () {
+                  _decrementDuration();
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _startTimer() {
+    _isRunning = true;
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      if (_duration.inSeconds > 0) {
+        setState(() {
+          _duration -= Duration(seconds: 1);
+        });
+      } else {
+        _timer.cancel();
+        _isRunning = false;
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Timer Finished'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text('OK'),
+                ),
+              ],
+            );
+          },
+        );
+      }
+    });
+  }
+
+  void _pauseTimer() {
+    _timer.cancel();
+    _isRunning = false;
+  }
+
+  void _resetTimer() {
+    _timer.cancel();
+    _isRunning = false;
+    setState(() {
+      _duration = Duration(minutes: 1);
+    });
+  }
+
+  void _incrementDuration() {
+    setState(() {
+      _duration += Duration(minutes: 1);
+    });
+  }
+
+  void _decrementDuration() {
+    if (_duration.inMinutes > 1) {
+      setState(() {
+        _duration -= Duration(minutes: 1);
+      });
+    }
+  }
+
+  String _formattedTime(int milliseconds) {
+    int seconds = (milliseconds / 1000).truncate();
+    int minutes = (seconds / 60).truncate();
+
+    String minutesStr = (minutes % 60).toString().padLeft(2, '0');
+    String secondsStr = (seconds % 60).toString().padLeft(2, '0');
+
+    return '$minutesStr:$secondsStr';
+  }
+}
